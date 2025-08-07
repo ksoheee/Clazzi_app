@@ -1,36 +1,59 @@
 package com.example.clazzi.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.clazzi.model.Vote
 import com.example.clazzi.model.VoteOption
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class VoteListViewModel: ViewModel() {
+    val db : FirebaseFirestore = Firebase.firestore
     private val _voteList = MutableStateFlow<List<Vote>>(emptyList())
     val voteList: StateFlow<List<Vote>> =_voteList
 
-    init{//더미데이터를 뷰모델에서
-        _voteList.value= listOf(
-            Vote(id="1",title="소풍 같이가고 싶은 사람?", voteOptions = listOf(
-                VoteOption(id="1", optionText = "김소희"),
-                VoteOption(id="2", optionText = "웅이"),
-            )
-            ),
-            Vote(id="2",title="어디로 놀러갈까요?", voteOptions = listOf(
-                VoteOption(id="1", optionText = "강릉"),
-                VoteOption(id="2", optionText = "제주도"),
-                VoteOption(id="3", optionText = "부산"),
-            )
-            ),
-            Vote(id="3",title="서핑 같이 가고 싶은 사람?", voteOptions = listOf(
-                VoteOption(id="1", optionText = "김소희"),
-                VoteOption(id="2", optionText = "웅이"),
-                VoteOption(id="3", optionText = "엄마"),
-            )
-            ),
-        )
+    init{
+        //뷰모델 초기화 시 실시간 리스너 설정
+        db.collection("vote")
+            .addSnapshotListener { snapshot,error->
+                if(error!= null){
+                    Log.e("Firestore","Error getting votes",error)
+                    return@addSnapshotListener
+                }
+                if(snapshot != null){
+                    _voteList.value=snapshot.toObjects(Vote::class.java)
+                }
+            }
     }
+
+//    init{//더미데이터를 뷰모델에서
+//        _voteList.value= listOf(
+//            Vote(id="1",title="소풍 같이가고 싶은 사람?", voteOptions = listOf(
+//                VoteOption(id="1", optionText = "김소희"),
+//                VoteOption(id="2", optionText = "웅이"),
+//            )
+//            ),
+//            Vote(id="2",title="어디로 놀러갈까요?", voteOptions = listOf(
+//                VoteOption(id="1", optionText = "강릉"),
+//                VoteOption(id="2", optionText = "제주도"),
+//                VoteOption(id="3", optionText = "부산"),
+//            )
+//            ),
+//            Vote(id="3",title="서핑 같이 가고 싶은 사람?", voteOptions = listOf(
+//                VoteOption(id="1", optionText = "김소희"),
+//                VoteOption(id="2", optionText = "웅이"),
+//                VoteOption(id="3", optionText = "엄마"),
+//            )
+//            ),
+//        )
+//    }
 
     //Id로 특정 투표를 가져오는 메서드
     fun getVoteById(voteId: String):Vote?{
@@ -38,6 +61,42 @@ class VoteListViewModel: ViewModel() {
     }
     //새로운 투표를 추가하는 메서드
     fun addVote(vote: Vote){
-        _voteList.value+=vote
+        //_voteList.value+=vote
+        viewModelScope.launch{
+            try{
+                val voteMap = hashMapOf(
+                    "id" to vote.id,
+                    "title" to vote.title,
+                    "createAt" to FieldValue.serverTimestamp(),
+                    "voteOptions" to vote.voteOptions.map{
+                        hashMapOf(
+                            "id" to it.id,
+                            "optionText" to it.optionText
+                        )
+                    }
+                )
+                db.collection("vote")
+                    .document(vote.id)
+                    .set(voteMap)
+                    .await()
+            }catch(e: Exception){
+                //에러 처리(예:사용자에게 토스트 메시지 표시)
+            }
+        }
+    }
+    //투표 데이터를 업데이트 하는 함수
+    fun setVote(vote: Vote){
+        viewModelScope.launch{
+            try{
+                db.collection("votes")
+                    .document(vote.id)
+                    .set(vote)
+                    .await()
+                Log.d("Firestore","투표가 성공적으로 되었습니다.")
+            }catch(e:Exception){
+                Log.e("Firestore","투표 업데이트 중 오류가 발생했습니다.",e)
+            }
+        }
+
     }
 }

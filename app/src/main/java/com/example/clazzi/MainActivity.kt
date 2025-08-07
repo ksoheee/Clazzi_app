@@ -59,7 +59,8 @@ class MainActivity : ComponentActivity() {
                         if(vote != null){
                             VoteScreen(
                                 vote=vote,
-                                navController=navController
+                                navController=navController,
+                                viewModel= voteListViewModel
                             )
                         }else{
                             //특정 id의 투표가 없을 때의 에러 처리
@@ -67,6 +68,7 @@ class MainActivity : ComponentActivity() {
                             Toast.makeText(context,"해당 투표가 존재하지 않습니다.",Toast.LENGTH_SHORT).show()
                         }
                     }
+//                    콜백방식
 //                    composable("createVote") {
 //                        CreateVoteScreen(
 //                            onVoteCreate = {vote->

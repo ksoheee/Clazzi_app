@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,16 +39,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
 import com.example.clazzi.model.Vote
+import com.example.clazzi.viewmodel.VoteListViewModel
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class) //TopAppBar의 실험 적인 기능 사용 하기 위해
 @Composable
 fun VoteScreen(
     vote: Vote,
-    navController : NavController
+    navController : NavController,
+    viewModel: VoteListViewModel
 ){
     var selectOption by remember { mutableStateOf(0) }  //0일떄 첫번재버튼,1일때 두번째,2일때 세번째
+    var hasVoted by remember{mutableStateOf(false)}
+    val coroutineScope = rememberCoroutineScope()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -119,7 +127,31 @@ fun VoteScreen(
 
             Spacer(Modifier.height(40.dp))
             Button(
-                onClick = {},
+                onClick = {
+                    if(!hasVoted){//투표가 완료 되었다면
+                        coroutineScope.launch{
+                            val voterId = UUID.randomUUID().toString()
+                            val selectedOption = vote.voteOptions[selectOption]
+
+                            //새로운 투표자를 포함한 업데이트된 투표 옵션 생성
+                            val updateOption= selectedOption.copy(
+                                voters = selectedOption.voters +voterId
+                            )
+                            //업데이트된 투표 옵션 목록 생성
+                            val updatedOptions = vote.voteOptions.mapIndexed{index, option ->
+                                if(index == selectOption) updateOption else option
+                            }
+                            val updateVote = vote.copy(
+                                voteOptions = updatedOptions
+                            )
+
+                            viewModel.setVote(updateVote)
+                            hasVoted=true
+                        }
+
+                    }
+                },
+                enabled = !hasVoted,
                 modifier = Modifier.width(200.dp)
             ){
                 Text("투표 하기")
