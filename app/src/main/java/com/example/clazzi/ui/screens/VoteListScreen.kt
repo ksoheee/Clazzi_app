@@ -21,24 +21,29 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.Navigator
 import com.example.clazzi.model.Vote
 import com.example.clazzi.model.VoteOption
 import com.example.clazzi.ui.theme.ClazziTheme
+import com.example.clazzi.viewmodel.VoteListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VoteListScreen(
     navController : NavController,
-    voteList: List<Vote>,
+    viewModel: VoteListViewModel,
     onVoteClicked:(String)-> Unit
 ){
-
+    val voteList by viewModel.voteList.collectAsState() //뷰모델을 관찰해서 자동으로 갱신하겠다.
     Scaffold(
         topBar = {
             TopAppBar(
@@ -90,23 +95,8 @@ fun VoteListScreenPreview() {
     ClazziTheme {
         VoteListScreen(
             navController = NavController(LocalContext.current),
-            arrayListOf
-                (
-                    Vote(id="1",title="소풍 같이가고 싶은 사람?", voteOptions = listOf(
-                        VoteOption(id="1", optionText = "김소희"),
-                        VoteOption(id="2", optionText = "웅이"),
-                    )),
-                    Vote(id="2",title="어디로 놀러갈까요?", voteOptions = listOf(
-                        VoteOption(id="1", optionText = "강릉"),
-                        VoteOption(id="2", optionText = "제주도"),
-                        VoteOption(id="3", optionText = "부산"),
-                    )),
-                    Vote(id="3",title="서핑 같이 가고 싶은 사람?", voteOptions = listOf(
-                        VoteOption(id="1", optionText = "김소희"),
-                        VoteOption(id="2", optionText = "웅이"),
-                        VoteOption(id="3", optionText = "엄마"),
-                    )),
-                ),onVoteClicked={}
+            viewModel=viewModel(),
+            onVoteClicked={}
 
         )
 

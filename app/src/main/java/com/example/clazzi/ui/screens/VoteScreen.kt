@@ -93,7 +93,7 @@ fun VoteScreen(
             Spacer(Modifier.height(20.dp))
             Image(
                 painter= painterResource(id=android.R.drawable.ic_menu_gallery),
-                contentDescription = "음식 사진",
+                contentDescription = "투표 사진",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .size(120.dp)
@@ -101,42 +101,22 @@ fun VoteScreen(
                     .background(Color.LightGray)
             )
             Spacer(Modifier.height(20.dp))
-            Button(
-                onClick = {
-                    selectOption=0
-                },
-                colors = ButtonDefaults.buttonColors(
-                    if(selectOption==0) Color(0xFF13F8A5)
-                            else Color.LightGray.copy(alpha = 0.5f) //투명도
-                ),
-                modifier = Modifier.width(200.dp)
-            ){
-                Text("구내식당")
+
+            vote.voteOptions.forEachIndexed { index, voteOption ->
+                Button(
+                    onClick = {
+                        selectOption=index
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        if(selectOption==index) Color(0xFF13F8A5)
+                        else Color.LightGray.copy(alpha = 0.5f) //투명도
+                    ),
+                    modifier = Modifier.width(200.dp)
+                ){
+                    Text(voteOption.optionText)
+                }
             }
-            Button(
-                onClick = {
-                    selectOption=1
-                },
-                colors = ButtonDefaults.buttonColors(
-                    if(selectOption==1) Color(0xFF13F8A5)
-                    else Color.LightGray.copy(alpha = 0.5f) //투명도
-                ),
-                modifier = Modifier.width(200.dp)
-            ){
-                Text("마라탕")
-            }
-            Button(
-                onClick = {
-                    selectOption=2
-                },
-                colors = ButtonDefaults.buttonColors(
-                    if(selectOption==2) Color(0xFF13F8A5)
-                    else Color.LightGray.copy(alpha = 0.5f) //투명도
-                ),
-                modifier = Modifier.width(200.dp)
-            ){
-                Text("돈가스")
-            }
+
             Spacer(Modifier.height(40.dp))
             Button(
                 onClick = {},

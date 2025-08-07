@@ -58,4 +58,9 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     // Jetpack Compose Integration
     implementation("androidx.navigation:navigation-compose:2.9.3")
+
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
+// ViewModel utilities for Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
 }

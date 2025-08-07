@@ -36,14 +36,20 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.clazzi.model.Vote
 import com.example.clazzi.model.VoteOption
+import com.example.clazzi.viewmodel.VoteListViewModel
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateVoteScreen(
-    onVoteCreate:(Vote)-> Unit
+    navController: NavController,
+    viewModel: VoteListViewModel,
+//    onVoteCreate:(Vote)-> Unit
 ){
     val (title:String ,setTitle: (String)->Unit) = remember{mutableStateOf("")}
     val options: SnapshotStateList<String> = remember { mutableStateListOf("", "") }
@@ -117,7 +123,9 @@ fun CreateVoteScreen(
                                 VoteOption(id = UUID.randomUUID().toString(), optionText =it)
                             }
                     )
-                    onVoteCreate(newVote)
+                    //onVoteCreate(newVote)
+                    viewModel.addVote(newVote)
+                    navController.popBackStack()
                 },
                 modifier=Modifier.fillMaxSize()
             ){
