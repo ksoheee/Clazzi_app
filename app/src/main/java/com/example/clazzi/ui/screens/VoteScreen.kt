@@ -1,5 +1,6 @@
 package com.example.clazzi.ui.screens
 
+import android.R.attr.contentDescription
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
@@ -41,8 +42,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImagePainter.State.Empty.painter
+import coil.compose.rememberAsyncImagePainter
 import com.example.clazzi.model.Vote
 import com.example.clazzi.viewmodel.VoteListViewModel
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -100,7 +104,10 @@ fun VoteScreen(
             )
             Spacer(Modifier.height(20.dp))
             Image(
-                painter= painterResource(id=android.R.drawable.ic_menu_gallery),
+                painter = if(vote.imageUrl != null)
+                    rememberAsyncImagePainter(vote.imageUrl)
+                else
+                    painterResource(id=android.R.drawable.ic_menu_gallery),
                 contentDescription = "투표 사진",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -130,17 +137,23 @@ fun VoteScreen(
                 onClick = {
                     if(!hasVoted){//투표가 완료 되었다면
                         coroutineScope.launch{
-                            val voterId = UUID.randomUUID().toString()
+                            val user = FirebaseAuth.getInstance().currentUser
+                            val uid = user?.uid?:"0" //null이면 0
+
+//                            val voterId = UUID.randomUUID().toString()
+//                            val selectedOption = vote.voteOptions[selectOption]
+                            val voterId = uid
                             val selectedOption = vote.voteOptions[selectOption]
 
-                            //새로운 투표자를 포함한 업데이트된 투표 옵션 생성
+                            //새로운 투표자를 포함한 업데이트된 투표 옵션 생성:voteOptions 여러개 중에 바뀐 항목만 바꾸어서 voteOptions 새로 만든다
                             val updateOption= selectedOption.copy(
                                 voters = selectedOption.voters +voterId
                             )
-                            //업데이트된 투표 옵션 목록 생성
+                            //업데이트된 투표 옵션 목록 생성:
                             val updatedOptions = vote.voteOptions.mapIndexed{index, option ->
                                 if(index == selectOption) updateOption else option
                             }
+                            //
                             val updateVote = vote.copy(
                                 voteOptions = updatedOptions
                             )

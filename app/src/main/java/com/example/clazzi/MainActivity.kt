@@ -23,11 +23,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.clazzi.model.Vote
 import com.example.clazzi.model.VoteOption
+import com.example.clazzi.ui.screens.AuthScreen
 import com.example.clazzi.ui.screens.CreateVoteScreen
+import com.example.clazzi.ui.screens.MyPageScreen
 import com.example.clazzi.ui.screens.VoteListScreen
 import com.example.clazzi.ui.screens.VoteScreen
 import com.example.clazzi.ui.theme.ClazziTheme
 import com.example.clazzi.viewmodel.VoteListViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 //@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -38,11 +41,21 @@ class MainActivity : ComponentActivity() {
             ClazziTheme {
                 val navController= rememberNavController()
                 val voteListViewModel = viewModel<VoteListViewModel>()
+                val isLoggedIn: Boolean = FirebaseAuth.getInstance().currentUser != null
                 NavHost(
                     navController=navController,
-                        startDestination = "voteList" //초기 화면
-                        //startDestination = "createVote" //초기 화면
+                        startDestination =if(isLoggedIn)"voteList" else "auth" //초기 화면
                 ) {
+                    composable("auth"){
+                        AuthScreen(
+                            navController=navController
+                        )
+                    }
+                    composable("myPage"){
+                        MyPageScreen(
+                            navController=navController
+                        )
+                    }
                     composable("voteList") {
                         VoteListScreen(
                             navController=navController,

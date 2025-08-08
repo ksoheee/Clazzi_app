@@ -62,10 +62,18 @@ dependencies {
     // Jetpack Compose Integration
     implementation("androidx.navigation:navigation-compose:2.9.3")
 
-    // ViewModel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
-// ViewModel utilities for Compose
+    // ViewModel utilities for Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2")
 
     implementation("com.google.firebase:firebase-firestore-ktx:24.10.0") //파이어베이스
+
+    //비밀번호 이미지 라이브러리
+    implementation("androidx.compose.material:material-icons-extended")
+
+    //인증
+    implementation("com.google.firebase:firebase-auth:22.3.0")
+
+    //
+    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
 }

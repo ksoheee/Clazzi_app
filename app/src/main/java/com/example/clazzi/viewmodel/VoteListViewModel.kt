@@ -1,5 +1,7 @@
 package com.example.clazzi.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,11 +10,14 @@ import com.example.clazzi.model.VoteOption
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 class VoteListViewModel: ViewModel() {
     val db : FirebaseFirestore = Firebase.firestore
@@ -22,6 +27,7 @@ class VoteListViewModel: ViewModel() {
     init{
         //뷰모델 초기화 시 실시간 리스너 설정
         db.collection("vote")
+            .orderBy("createAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot,error->
                 if(error!= null){
                     Log.e("Firestore","Error getting votes",error)
@@ -60,18 +66,31 @@ class VoteListViewModel: ViewModel() {
         return _voteList.value.find{it.id==voteId}
     }
     //새로운 투표를 추가하는 메서드
-    fun addVote(vote: Vote){
+    fun addVote(vote: Vote, context: Context, imageUri: Uri){
         //_voteList.value+=vote
         viewModelScope.launch{
             try{
+                val storageRef = FirebaseStorage.getInstance().reference
+                val imageRef = storageRef.child("image/${UUID.randomUUID()}.jpg")
+
+                //이미지 업로드
+                val inputStream = context.contentResolver.openInputStream(imageUri)
+                val uploadTask = inputStream?.let {imageRef.putStream(it).await()}
+
+                //다운로드 URL 가져오기
+                val downloadUrl = imageRef.downloadUrl.await().toString()
+
+                //Firebase에 업로드할 데이터 구성
                 val voteMap = hashMapOf(
                     "id" to vote.id,
                     "title" to vote.title,
+                    "imageUrl" to downloadUrl,
                     "createAt" to FieldValue.serverTimestamp(),
                     "voteOptions" to vote.voteOptions.map{
                         hashMapOf(
                             "id" to it.id,
                             "optionText" to it.optionText
+
                         )
                     }
                 )
