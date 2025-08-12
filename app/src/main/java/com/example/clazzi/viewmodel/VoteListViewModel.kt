@@ -26,11 +26,11 @@ class VoteListViewModel: ViewModel() {
 
     init{
         //뷰모델 초기화 시 실시간 리스너 설정
-        db.collection("vote")
+        db.collection("votes")
             .orderBy("createAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot,error->
                 if(error!= null){
-                    Log.e("Firestore","Error getting votes",error)
+                    Log.e("Firestore","Error getting vote",error)
                     return@addSnapshotListener
                 }
                 if(snapshot != null){
@@ -92,9 +92,10 @@ class VoteListViewModel: ViewModel() {
                             "optionText" to it.optionText
 
                         )
-                    }
+                    },
+                    "deadline" to vote.deadline
                 )
-                db.collection("vote")
+                db.collection("votes")
                     .document(vote.id)
                     .set(voteMap)
                     .await()

@@ -34,6 +34,33 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+
+
+            <!--커스텀 스킴 딥링크-->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- clazzi://vote/123 같이 매칭 -->
+                <data
+                    android:host="vote"
+                    android:scheme="clazzi" />
+            </intent-filter>
+
+
+            <!--https 기반 앱링크-->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- https://clazzi5.web.app/vote/123 같이 매칭 -->
+                <data
+                    android:scheme="https"
+                    android:host="clazzi-44cf7.web.app"
+                    android:pathPrefix="/vote" />
+            </intent-filter>
+
         </activity>
     </application>
 

@@ -2,7 +2,12 @@ package com.example.clazzi.ui.screens
 
 import android.R.attr.label
 import android.R.attr.onClick
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.net.Uri
+import android.widget.DatePicker
+import android.widget.TimePicker
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -51,7 +58,12 @@ import com.example.clazzi.model.VoteOption
 import com.example.clazzi.ui.components.CameraPickerWithPermission
 import com.example.clazzi.ui.components.ImagePickerWithPermission
 import com.example.clazzi.viewmodel.VoteListViewModel
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
+import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,6 +80,9 @@ fun CreateVoteScreen(
     var showImagePicker by remember{mutableStateOf(false)}
     var showCameraPicker by remember{mutableStateOf(false)}
     var imageUri by remember{mutableStateOf<Uri?>(null)}
+
+    //마감일 스테이트
+    var deadlineDate by remember{mutableStateOf<Date?>(null)}
 
     Scaffold(
         topBar = {
@@ -175,8 +190,20 @@ fun CreateVoteScreen(
             ){
                 Text("항목 추가")
             }
+            Spacer(modifier = Modifier.padding(40.dp))
+            DeadlineDateTimePicker(
+                deadline = deadlineDate,
+                onDeadlineChange ={newDate->
+                    deadlineDate = newDate
+                }
+            )
+            Spacer(modifier = Modifier.padding(40.dp))
             Button(
                 onClick={
+                    if(imageUri == null){
+                        Toast.makeText(navController.context, "이미지를 선택해주세요",Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
                     val newVote = Vote(
                         id = UUID.randomUUID().toString(),
                         title=title,
@@ -184,7 +211,8 @@ fun CreateVoteScreen(
                             .filter{it.isNotBlank()}
                             .map{
                                 VoteOption(id = UUID.randomUUID().toString(), optionText =it)
-                            }
+                            },
+                        deadline = deadlineDate
                     )
                     //onVoteCreate(newVote)
                     viewModel.addVote(newVote,navController.context,imageUri!!)
@@ -199,12 +227,67 @@ fun CreateVoteScreen(
 }
 
 @Composable
+fun DeadlineDateTimePicker(
+    deadline: Date?,
+    onDeadlineChange :(Date)->Unit
+){
+    val context = LocalContext.current  //흐름을 관리(어느 화면, 어느 포커스에 있는지)
+    val calendar = Calendar.getInstance()
+
+    //초기값이 있으면 calendardp 셋팅
+    deadline?.let {calendar.time = it}
+
+    //화면에 보여줄 문자열(포맷팅)
+    val displayText = deadline?.let{
+        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(it)
+    } ?: ""
+
+    val datePickerDialog = remember{
+        DatePickerDialog(
+            context,
+            {_ : DatePicker, year: Int, month: Int, dayOfMonth: Int ->
+                calendar.set(Calendar.YEAR, year)
+                calendar.set(Calendar.MONTH, month)
+                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+
+                TimePickerDialog(
+                    context,
+                    {_ : TimePicker, hourOfDay: Int, minute:Int ->
+                        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay)
+                        calendar.set(Calendar.MINUTE, minute)
+                        calendar.set(Calendar.SECOND, 0)
+                        calendar.set(Calendar.MILLISECOND, 0)
+
+                        onDeadlineChange(calendar.time)
+                    },
+                    calendar.get(Calendar.HOUR_OF_DAY),
+                    calendar.get(Calendar.MINUTE),
+                    true
+                ).show()
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+    }
+    OutlinedTextField(
+        value =displayText,
+        onValueChange = {},
+        label={Text("투표 마감일")},
+        modifier = Modifier.fillMaxSize()
+            .clickable{
+                datePickerDialog.show()
+            },
+        enabled = false,
+        readOnly = true,
+    )
+}
+@Composable
 fun TopAppBar(){
     Box(
         modifier= Modifier
             .height(54.dp).fillMaxSize()
     )
-
     {
         Text("탑바")
     }

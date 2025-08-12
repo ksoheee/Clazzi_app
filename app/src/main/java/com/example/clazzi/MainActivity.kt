@@ -21,6 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import com.example.clazzi.model.Vote
 import com.example.clazzi.model.VoteOption
 import com.example.clazzi.ui.screens.AuthScreen
@@ -65,21 +66,32 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-                    composable("vote/{voteId}") {backStackEntry->
+                    composable(
+                        "vote/{voteId}",
+                        deepLinks=listOf(
+                            navDeepLink { uriPattern="clazzi://vote/{voteId}" }, //스키마 형식
+                            navDeepLink { uriPattern="https://clazzi.web.app/vote/{voteId}" } //파이어베이스에서 제공해주는
+                        )
+                    ) {backStackEntry->
                         val voteId:String = backStackEntry.arguments?.getString("voteId")?:"1"
-                        val vote = voteListViewModel.getVoteById(voteId)
+                        //val vote = voteListViewModel.getVoteById(voteId)
                         //val vote = null
-                        if(vote != null){
-                            VoteScreen(
-                                vote=vote,
-                                navController=navController,
-                                viewModel= voteListViewModel
-                            )
-                        }else{
-                            //특정 id의 투표가 없을 때의 에러 처리
-                            val context = LocalContext.current
-                            Toast.makeText(context,"해당 투표가 존재하지 않습니다.",Toast.LENGTH_SHORT).show()
-                        }
+//                        if(vote != null){
+//                            VoteScreen(
+//                                voteId=voteId,
+//                                navController=navController,
+//                                viewModel= voteListViewModel
+//                            )
+//                        }else{
+//                            //특정 id의 투표가 없을 때의 에러 처리
+//                            val context = LocalContext.current
+//                            Toast.makeText(context,"해당 투표가 존재하지 않습니다.",Toast.LENGTH_SHORT).show()
+//                        }
+                        VoteScreen(
+                            voteId=voteId, //vote를 직접 넘기지 않고 id로 넘김, id만 넘기고 그 id로 vote를 가져오니까 중간에 vote가 바뀌어도 괜찮음
+                            navController=navController,
+                            voteListViewModel= voteListViewModel
+                        )
                     }
 //                    콜백방식
 //                    composable("createVote") {

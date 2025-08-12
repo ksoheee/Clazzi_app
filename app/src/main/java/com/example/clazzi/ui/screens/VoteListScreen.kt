@@ -1,10 +1,12 @@
 package com.example.clazzi.ui.screens
 
 import android.service.controls.actions.FloatAction
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,9 +28,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -43,6 +50,7 @@ import com.example.clazzi.model.VoteOption
 import com.example.clazzi.ui.theme.ClazziTheme
 import com.example.clazzi.util.formatDate
 import com.example.clazzi.viewmodel.VoteListViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +59,7 @@ fun VoteListScreen(
     viewModel: VoteListViewModel,
     onVoteClicked:(String)-> Unit
 ){
+
     val voteList by viewModel.voteList.collectAsState() //뷰모델을 관찰해서 자동으로 갱신하겠다.
     Scaffold(
         topBar = {
@@ -103,6 +112,19 @@ fun VoteItem(
     vote: Vote,
     onVoteClicked:(String)->Unit
 ){
+    val user = FirebaseAuth.getInstance().currentUser
+    val currentUserId = user?.uid?: "0"
+
+    //hasVote 상태: 사용자가 투표했는지 판단
+    var hasVoted by remember{ mutableStateOf(false) }
+
+    //vote 데이터가 로드된 후 hasvoted 초기화
+    LaunchedEffect(vote) {
+        hasVoted = vote.voteOptions.any{ option->
+            option.voters.contains(currentUserId)
+        }
+    }
+
     Card(
         modifier = Modifier//.padding(16.dp)
             .fillMaxWidth()
@@ -111,20 +133,28 @@ fun VoteItem(
                 //navController.navigate("vote") //vote로 넘어감
             }
     ){
-        Column(
+        Row(
             modifier = Modifier.padding(16.dp)
-        ) {
-            Text(vote.title,style =MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text="생성일: ${formatDate(vote.createAt)}",
-                style=MaterialTheme.typography.bodySmall
-            )
-            Text(
-                text="항목 개수: ${vote.optionCount}",
-                style=MaterialTheme.typography.bodySmall
-            )
+        ){
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(vote.title,style =MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text="생성일: ${formatDate(vote.createAt)}",
+                    style=MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text="항목 개수: ${vote.optionCount}",
+                    style=MaterialTheme.typography.bodySmall
+                )
+            }
+            //투표 여부
+            Text(if(hasVoted)"투표 함" else "투표 안함")
         }
+
+
     }
 }
 
