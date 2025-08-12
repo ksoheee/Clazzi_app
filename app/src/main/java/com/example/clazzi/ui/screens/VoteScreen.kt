@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import com.example.clazzi.model.Vote
 import com.example.clazzi.util.formatDate
 import com.example.clazzi.viewmodel.VoteListViewModel
 import com.example.clazzi.viewmodel.VoteViewModel
@@ -66,10 +67,11 @@ import java.util.Date
 fun VoteScreen(
     voteId :String,
     navController : NavController,
+    voteViewModel: VoteViewModel,
     voteListViewModel: VoteListViewModel
 
 ){
-    val voteViewModel :VoteViewModel = viewModel()  //VoteScreen 안에서만 사용하니까 여기서 선언
+
 
     //초기 데이터 로드
     LaunchedEffect(voteId){  //voteId가 바뀌기 전까지는 한번만 실행, id가 바뀌면 다시 실행

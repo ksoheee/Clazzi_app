@@ -1,71 +1,92 @@
 package com.example.clazzi
 
+import android.R.attr.label
+import android.R.attr.onClick
+import android.net.http.SslCertificate.saveState
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
 import com.example.clazzi.model.Vote
 import com.example.clazzi.model.VoteOption
+import com.example.clazzi.repository.FirebaseVoteRepository
+import com.example.clazzi.repository.RestApiVoteRepository
+import com.example.clazzi.repository.network.ApiClient
 import com.example.clazzi.ui.screens.AuthScreen
+import com.example.clazzi.ui.screens.ChatScreen
 import com.example.clazzi.ui.screens.CreateVoteScreen
 import com.example.clazzi.ui.screens.MyPageScreen
 import com.example.clazzi.ui.screens.VoteListScreen
 import com.example.clazzi.ui.screens.VoteScreen
 import com.example.clazzi.ui.theme.ClazziTheme
 import com.example.clazzi.viewmodel.VoteListViewModel
+import com.example.clazzi.viewmodel.VoteListViewModelFactory
+import com.example.clazzi.viewmodel.VoteViewModel
+import com.example.clazzi.viewmodel.VoteViewModelFactory
 import com.google.firebase.auth.FirebaseAuth
+
+
+
 
 //@OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        //enableEdgeToEdge()
         setContent {
             ClazziTheme {
                 val navController= rememberNavController()
-                val voteListViewModel = viewModel<VoteListViewModel>()
+
+                val repo = FirebaseVoteRepository()  //파이어베이스 연동
+                //val repo = RestApiVoteRepository(ApiClient.voteApiService)   //RESTAPI 연동
+                val voteListViewModel: VoteListViewModel = viewModel(
+                    factory = VoteListViewModelFactory(repo)
+                )
+                val voteViewModel: VoteViewModel = viewModel(
+                    factory = VoteViewModelFactory(repo)
+                )
                 val isLoggedIn: Boolean = FirebaseAuth.getInstance().currentUser != null
+
                 NavHost(
                     navController=navController,
-                        startDestination =if(isLoggedIn)"voteList" else "auth" //초기 화면
+                    startDestination =if(isLoggedIn)"main" else "auth" //초기 화면
                 ) {
                     composable("auth"){
                         AuthScreen(
                             navController=navController
                         )
                     }
-                    composable("myPage"){
-                        MyPageScreen(
-                            navController=navController
-                        )
+                    composable("main") {
+                        MainScreen(voteListViewModel)
                     }
-                    composable("voteList") {
-                        VoteListScreen(
-                            navController=navController,
-                            viewModel = voteListViewModel,
-                            onVoteClicked = { voteId->
-                                navController.navigate("vote/$voteId")
-                            }
-                        )
-                    }
+
                     composable(
                         "vote/{voteId}",
                         deepLinks=listOf(
@@ -74,22 +95,10 @@ class MainActivity : ComponentActivity() {
                         )
                     ) {backStackEntry->
                         val voteId:String = backStackEntry.arguments?.getString("voteId")?:"1"
-                        //val vote = voteListViewModel.getVoteById(voteId)
-                        //val vote = null
-//                        if(vote != null){
-//                            VoteScreen(
-//                                voteId=voteId,
-//                                navController=navController,
-//                                viewModel= voteListViewModel
-//                            )
-//                        }else{
-//                            //특정 id의 투표가 없을 때의 에러 처리
-//                            val context = LocalContext.current
-//                            Toast.makeText(context,"해당 투표가 존재하지 않습니다.",Toast.LENGTH_SHORT).show()
-//                        }
                         VoteScreen(
                             voteId=voteId, //vote를 직접 넘기지 않고 id로 넘김, id만 넘기고 그 id로 vote를 가져오니까 중간에 vote가 바뀌어도 괜찮음
                             navController=navController,
+                            voteViewModel= voteViewModel,
                             voteListViewModel= voteListViewModel
                         )
                     }
@@ -115,4 +124,80 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+sealed class BottomNavItem(val route: String, val icon: ImageVector,val label: String){
+    object VoteList : BottomNavItem("voteList", Icons.AutoMirrored.Filled.List,"투표")
+    object Chat : BottomNavItem("chat", Icons.AutoMirrored.Filled.List,"채팅")
+    object MyPage : BottomNavItem("myPage", Icons.AutoMirrored.Filled.List,"마이페이지")
+}
 
+@Composable
+fun MainScreen(
+    voteListViewModel: VoteListViewModel
+){
+    val navController = rememberNavController()
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(navController)
+        }
+    ) { innerPadding->
+        NavHost(
+            navController = navController,
+            startDestination = "voteList",
+            modifier = Modifier.padding(innerPadding)
+        ){
+            composable(BottomNavItem.VoteList.route) {
+                VoteListScreen(
+                    navController=navController,
+                    viewModel = voteListViewModel,
+                    onVoteClicked = { voteId->
+                        navController.navigate("vote/$voteId")
+                    }
+                )
+            }
+            composable(BottomNavItem.Chat.route){
+                ChatScreen()
+            }
+            composable(BottomNavItem.MyPage.route){
+                MyPageScreen(
+                    navController=navController
+                )
+            }
+        }
+
+    }
+}
+
+@Composable
+fun BottomNavigationBar(navController: NavHostController){
+    val items=listOf(
+        BottomNavItem.VoteList,
+        BottomNavItem.Chat,
+        BottomNavItem.MyPage,
+    )
+    BottomNavigation{
+        val currentRoute = navController
+            .currentBackStackEntryAsState().value?.destination?.route
+        items.forEach { item->
+            BottomNavigationItem(
+
+                icon={
+                    Icon(item.icon, contentDescription = item.label)
+                },
+                label={Text(item.label)},
+                selected = currentRoute == item.route,
+                onClick ={
+                    navController.navigate(item.route)
+                    {
+                        popUpTo(navController.graph.startDestinationId){
+                            saveState= true
+                        }
+                        launchSingleTop=true
+                        restoreState = true
+                    }
+                }
+            )
+
+        }
+
+    }
+}
