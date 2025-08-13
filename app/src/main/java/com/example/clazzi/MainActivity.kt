@@ -14,7 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -25,9 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -51,8 +57,6 @@ import com.example.clazzi.viewmodel.VoteListViewModelFactory
 import com.example.clazzi.viewmodel.VoteViewModel
 import com.example.clazzi.viewmodel.VoteViewModelFactory
 import com.google.firebase.auth.FirebaseAuth
-
-
 
 
 //@OptIn(ExperimentalMaterial3Api::class)
@@ -84,7 +88,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("main") {
-                        MainScreen(voteListViewModel)
+                        MainScreen(
+                            voteListViewModel,
+                            navController
+                        )
                     }
 
                     composable(
@@ -118,6 +125,11 @@ class MainActivity : ComponentActivity() {
 
                         )
                     }
+                    composable("myPage"){
+                        MyPageScreen(
+                            navController=navController
+                        )
+                    }
                 }
 
             }
@@ -126,13 +138,15 @@ class MainActivity : ComponentActivity() {
 }
 sealed class BottomNavItem(val route: String, val icon: ImageVector,val label: String){
     object VoteList : BottomNavItem("voteList", Icons.AutoMirrored.Filled.List,"투표")
-    object Chat : BottomNavItem("chat", Icons.AutoMirrored.Filled.List,"채팅")
-    object MyPage : BottomNavItem("myPage", Icons.AutoMirrored.Filled.List,"마이페이지")
+    object Chat : BottomNavItem("chat", Icons.Filled.ChatBubble,"채팅")
+    object MyPage : BottomNavItem("myPage", Icons.Filled.AccountCircle ,"마이페이지")
 }
 
+//Scffold안에서 NavHost에서는 그 안에서만 사용할 수 있음, parentNavController는 그 위에 선언되어 있기 때문에 상위에서 사용가능
 @Composable
 fun MainScreen(
-    voteListViewModel: VoteListViewModel
+    voteListViewModel: VoteListViewModel,
+    parentNavController: NavHostController
 ){
     val navController = rememberNavController()
     Scaffold(
@@ -148,9 +162,10 @@ fun MainScreen(
             composable(BottomNavItem.VoteList.route) {
                 VoteListScreen(
                     navController=navController,
+                    parentNavController= parentNavController,
                     viewModel = voteListViewModel,
                     onVoteClicked = { voteId->
-                        navController.navigate("vote/$voteId")
+                        parentNavController.navigate("vote/$voteId")
                     }
                 )
             }
@@ -159,7 +174,7 @@ fun MainScreen(
             }
             composable(BottomNavItem.MyPage.route){
                 MyPageScreen(
-                    navController=navController
+                    navController=parentNavController
                 )
             }
         }

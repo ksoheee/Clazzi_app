@@ -81,4 +81,6 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.11.0") // Gson 변환기
 
     implementation("androidx.compose.material:material:1.6.8")
+
+    implementation("androidx.compose.material:material-icons-core:1.6.8")
 }

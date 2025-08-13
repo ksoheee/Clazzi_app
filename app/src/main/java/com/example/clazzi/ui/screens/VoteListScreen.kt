@@ -56,6 +56,7 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun VoteListScreen(
     navController : NavController,
+    parentNavController: NavController,
     viewModel: VoteListViewModel,
     onVoteClicked:(String)-> Unit
 ){
@@ -70,7 +71,7 @@ fun VoteListScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                            navController.navigate("myPage")
+                            parentNavController.navigate("myPage")
                         }
                     ) {
                         Icon(
@@ -92,8 +93,10 @@ fun VoteListScreen(
         }
     ){ innerPadding->
         LazyColumn(
-            modifier = Modifier.padding(innerPadding).padding(16.dp),
+            modifier = Modifier.padding(innerPadding),//.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(16.dp)
+        //modifier의 padding과 이 padding의 차이 lazyColum안에 주게 되면 밖에 padding을 주는거고 content는 content에
         ) {
             items(voteList){vote->
                 VoteItem(vote) {
@@ -158,16 +161,3 @@ fun VoteItem(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun VoteListScreenPreview() {
-    ClazziTheme {
-        VoteListScreen(
-            navController = NavController(LocalContext.current),
-            viewModel=viewModel(),
-            onVoteClicked={}
-
-        )
-
-    }
-}
